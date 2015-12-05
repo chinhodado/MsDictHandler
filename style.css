@@ -1,12 +1,12 @@
 .green  { color: rgba(118, 156, 60,  1); }
-.blue   { color: rgba(54,  95,  145, 1); }
+.bl     { color: rgba(54,  95,  145, 1); }
 .orange { color: rgba(247, 150, 70,  1); }
 .brown  { color: rgba(99,  36,  35,  1); }
 .red    { color: rgba(192, 80,  77,  1); }
 .purple { color: rgba(95,  73,  122, 1); }
 
-.bold { font-weight: bold; }
-.cambria { font-family: Cambria; }
+.b { font-weight: bold; }
+.sr { font-family: Cambria; }
 .title {
   color: rgba(54, 95, 145, 1);
   font-weight:bold;

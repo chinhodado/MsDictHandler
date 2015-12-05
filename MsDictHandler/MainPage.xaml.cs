@@ -123,12 +123,12 @@ namespace App1 {
 
             // blue
             pattern = @"<span style=""color:rgba\(54,95,145,1\);"" ><span style=""color:rgba\(54,95,145,1\);"" >([^<>]+)</span></span>";
-            replacement = @"<span class='blue'>$1</span>";
+            replacement = @"<span class='bl'>$1</span>";
             result = Regex.Replace(result, pattern, replacement);
 
             // blue bold underline
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;text-decoration: underline;"" >([^<>]+)</span>";
-            replacement = @"<u class='blue bold'>$1</u>";
+            replacement = @"<u class='bl b'>$1</u>";
             result = Regex.Replace(result, pattern, replacement);
 
             // red
@@ -143,12 +143,12 @@ namespace App1 {
 
             // bold blue
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" ><span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" >([^<>]+)</span></span>";
-            replacement = @"<b class='blue'>$1</b>";
+            replacement = @"<b class='bl'>$1</b>";
             result = Regex.Replace(result, pattern, replacement);
 
             // bold blue 1 span
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" >([^<>]+)</span>";
-            replacement = @"<b class='blue'>$1</b>";
+            replacement = @"<b class='bl'>$1</b>";
             result = Regex.Replace(result, pattern, replacement);
 
             // orange bold
@@ -241,7 +241,7 @@ namespace App1 {
             result = Regex.Replace(result, "<br><br>", "<br>", RegexOptions.Singleline);
 
             pattern = @" style=""color:rgba\(54,95,145,1\);"" id="""" ><span style=""color:rgba\(54,95,145,1\);"" >";
-            replacement = @" class='blue'><span>";
+            replacement = @" class='bl'><span>";
             result = Regex.Replace(result, pattern, replacement, RegexOptions.Singleline);
 
             // can't remove completely since there are nested <span> inside
@@ -254,22 +254,22 @@ namespace App1 {
 
             // cambria 3 span
             pattern = @"<span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;"" >([^<>]+)</span></span></span>";
-            replacement = @"<span class='cambria'>$1</span>";
+            replacement = @"<span class='sr'>$1</span>";
             result = Regex.Replace(result, pattern, replacement);
 
             // cambria 2 span
             pattern = @"<span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;"" >([^<>]+)</span></span>";
-            replacement = @"<span class='cambria'>$1</span>";
+            replacement = @"<span class='sr'>$1</span>";
             result = Regex.Replace(result, pattern, replacement);
 
             // cambria sup
             pattern = @"<span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;"" ><span><span style=""vertical-align:super;"" >([^<>]+)</span></span></span></span>";
-            replacement = @"<sup class='cambria'>$1</sup>";
+            replacement = @"<sup class='sr'>$1</sup>";
             result = Regex.Replace(result, pattern, replacement);
 
             // cambria 2 span sup
             pattern = @"<span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;vertical-align:super;"" >([^<>]+)</span></span>";
-            replacement = @"<sup class='cambria'>$1</sup>";
+            replacement = @"<sup class='sr'>$1</sup>";
             result = Regex.Replace(result, pattern, replacement);
 
             // space
@@ -277,13 +277,16 @@ namespace App1 {
 
             // underlined link
             pattern = @" style=""color:rgba\(54,95,145,1\);font-weight:bold;text-decoration: underline;"" id="""" ><u class='blue bold'>";
-            replacement = @"><u class='blue bold'>";
+            replacement = @"><u class='bl b'>";
             result = Regex.Replace(result, pattern, replacement);
 
             // blue bold that needs to be handled separately
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" ><span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" >";
-            replacement = @"<span><span class='blue bold'>";
+            replacement = @"<span><span class='bl b'>";
             result = Regex.Replace(result, pattern, replacement);
+
+            // stray blue bold
+            result = Regex.Replace(result, @" style=""color:rgba\(54,95,145,1\);font-weight:bold;""", "");
 
             // stray brown
             result = Regex.Replace(result, @" style=""color:rgba\(99,36,35,1\);"" ", "");
@@ -292,6 +295,9 @@ namespace App1 {
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" ><span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" >([^<>]+)</span>";
             replacement = @"<span class='title'>$1";
             result = Regex.Replace(result, pattern, replacement);
+
+            // empty href
+            result = Regex.Replace(result, @"href=""""", "");
 
             result = result.Trim();
             return result;
