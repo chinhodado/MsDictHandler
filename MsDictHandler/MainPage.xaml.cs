@@ -1,43 +1,90 @@
 ﻿using DictionaryManager;
+using SQLite;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using Windows.Storage.Streams;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
-namespace App1
-{
+namespace App1 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
-    {
-        public MainPage()
-        {
+    public sealed partial class MainPage : Page {
+        private SQLiteConnection db;
+        private Dictionary dict;
+        string[] wordList = new string[40854];
+
+        public MainPage() {
             InitializeComponent();
             Loaded += PageLoaded;
         }
 
-        private void HandleError(Operation operation, int err)
-        {
+        private void HandleError(Operation operation, int err) {
             Debug.WriteLine("An error happened");
         }
+        StreamUriWinRTResolver myResolver = new StreamUriWinRTResolver();
+        Uri myUrl = new Uri("http://www.google.ca");
+        private async void OperationCompleted(Operation operation) {
+            string html;
+            using (IInputStream x = await myResolver.UriToStreamAsync(myUrl)) {
+                using (StreamReader stream = new StreamReader(x.AsStreamForRead())) {
+                    html = stream.ReadToEnd().Trim();
+                }
+            }
 
-        private void OperationCompleted(Operation operation)
-        {
-            Debug.WriteLine(operation.url());
+            string cleanHtml = GetProcessedHtml(html);
+            var url = operation.url();
+            int id = int.Parse(url.Substring(url.IndexOf(@"=", StringComparison.Ordinal) + 1));
+
+            db.Insert(new WordTable {
+                Word = wordList[id],
+                Definition = cleanHtml
+            });
+            operation.Dispose();
+            html = null;
+            cleanHtml = null;
+
+            if (id % 500 == 499 || id >= 40854) {
+                Application.Current.Exit();
+            }
+            Operation op = Operation.crateLoadPhraseDefinitionOperation("OxfordFrenchEnglish.dict", (uint)id + 1);
+            op.operationCompletedHandler += OperationCompleted;
+            op.post();
         }
 
-        private async void PageLoaded(object sender, RoutedEventArgs e)
-        {
-            InitializeDict();
-            Uri myUrl = new Uri("http://www.google.ca");//myWebview.BuildLocalStreamUri("MyContent", "foobar"));
-            StreamUriWinRTResolver myResolver = new StreamUriWinRTResolver();
-            var x = await myResolver.UriToStreamAsync(myUrl);
-            StreamReader stream = new StreamReader(x.AsStreamForRead());
-            string html = stream.ReadToEnd().Trim();
+        private void PageLoaded(object sender, RoutedEventArgs e) {
+            // initialize db
+            string path = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "test.db");
+            db = new SQLiteConnection(path, true);
+            db.CreateTable<WordTable>();
+            int count = db.ExecuteScalar<int>("select count(*) from WordTable");
+            //db.DropTable<WordTable>();
 
+            if (count == 40854) {
+                textBox.Text = "All done!";
+                return;
+            }
+
+            // initialize dict
+            Dictionary.AddDictionary(@"OxfordFrenchEnglish.dict");
+            Operation op = Operation.crateLoadTOC(@"OxfordFrenchEnglish.dict");
+            op.errorHandler += HandleError;
+            op.post();
+
+            dict = Dictionary.currentDictionary();
+            for (uint i = 0; i < 40854; i++) {
+                wordList[i] = dict.phrase(i);
+            }
+
+            op = Operation.crateLoadPhraseDefinitionOperation("OxfordFrenchEnglish.dict", (uint)count);
+            op.operationCompletedHandler += OperationCompleted;
+            op.post();
+        }
+
+        private string GetProcessedHtml(string html) {
             // useless attributes
             string result = Regex.Replace(html, @"-ms-text-size-adjust:none;", "");
             result = Regex.Replace(result, @"color:rgba\(0,0,0,1\);", "");
@@ -150,15 +197,17 @@ namespace App1
             result = Regex.Replace(result, pattern, replacement);
 
             // section div
-            result = Regex.Replace(result, @"style=""margin-bottom:20px;margin-top:0px;margin-left:0px;margin-right:0px;""", "class='section1'");
-            result = Regex.Replace(result, @"style=""margin-bottom:4px;margin-top:0px;margin-left:4px;margin-right:0px;"" ", "class='section2'");
-            result = Regex.Replace(result, @"style=""margin-bottom:10px;margin-top:0px;margin-left:0px;margin-right:0px;""", "class='section3'");
-            result = Regex.Replace(result, @"style=""margin-bottom:0px;margin-top:4px;margin-left:0px;margin-right:0px;"" ", "class='section4'");
-            result = Regex.Replace(result, @"style=""padding-bottom:0px;padding-top:0px;padding-left:2px;padding-right:0px;"" ", "class='section5'");
-            result = Regex.Replace(result, @"style=""margin-bottom:8px;margin-top:0px;margin-left:0px;margin-right:0px;"" ", "class='section6'");
-            result = Regex.Replace(result, @"style=""margin-bottom:8px;margin-top:0px;margin-left:0px;margin-right:0px;padding-bottom:0px;padding-top:0px;padding-left:2px;padding-right:0px;"" ", "class='section7'");
-            result = Regex.Replace(result, @"style=""margin-bottom:4px;margin-top:0px;margin-left:0px;margin-right:0px;"" ", "class='section8'");
-            result = Regex.Replace(result, @"style=""margin-bottom:0px;margin-top:10px;margin-left:0px;margin-right:0px;padding-bottom:2px;padding-top:2px;padding-left:2px;padding-right:2px; background-color:rgba\(240,240,240,1\);"" ", "class='section9'");
+            result = Regex.Replace(result, @"style=""margin-bottom:20px;margin-top:0px;margin-left:0px;margin-right:0px;""", "class='s1'");
+            result = Regex.Replace(result, @"style=""margin-bottom:4px;margin-top:0px;margin-left:4px;margin-right:0px;"" ", "class='s2'");
+            result = Regex.Replace(result, @"style=""margin-bottom:10px;margin-top:0px;margin-left:0px;margin-right:0px;""", "class='s3'");
+            result = Regex.Replace(result, @"style=""margin-bottom:0px;margin-top:4px;margin-left:0px;margin-right:0px;"" ", "class='s4'");
+            result = Regex.Replace(result, @"style=""padding-bottom:0px;padding-top:0px;padding-left:2px;padding-right:0px;"" ", "class='s5'");
+            result = Regex.Replace(result, @"style=""margin-bottom:8px;margin-top:0px;margin-left:0px;margin-right:0px;"" ", "class='s6'");
+            result = Regex.Replace(result, @"style=""margin-bottom:8px;margin-top:0px;margin-left:0px;margin-right:0px;padding-bottom:0px;padding-top:0px;padding-left:2px;padding-right:0px;"" ", "class='s7'");
+            result = Regex.Replace(result, @"style=""margin-bottom:4px;margin-top:0px;margin-left:0px;margin-right:0px;"" ", "class='s8'");
+            result = Regex.Replace(result, @"style=""margin-bottom:0px;margin-top:10px;margin-left:0px;margin-right:0px;padding-bottom:2px;padding-top:2px;padding-left:2px;padding-right:2px; background-color:rgba\(240,240,240,1\);"" ", "class='s9'");
+            result = Regex.Replace(result, @"style=""padding-bottom:2px;padding-top:2px;padding-left:2px;padding-right:2px; background-color:rgba\(238,236,225,1\);"" ", "class='s10'");
+            result = Regex.Replace(result, @"style=""margin-bottom:4px;margin-top:10px;margin-left:0px;margin-right:0px;"" ", "class='s11'");
 
             // empty span
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;"" ></span>";
@@ -218,6 +267,14 @@ namespace App1
             replacement = @"<sup class='cambria'>$1</sup>";
             result = Regex.Replace(result, pattern, replacement);
 
+            // cambria 2 span sup
+            pattern = @"<span style=""font-family:Cambria;"" ><span style=""font-family:Cambria;vertical-align:super;"" >([^<>]+)</span></span>";
+            replacement = @"<sup class='cambria'>$1</sup>";
+            result = Regex.Replace(result, pattern, replacement);
+
+            // space
+            result = Regex.Replace(result, @"<span style=""font-family:Cambria;"" > </span>", " ");
+
             // underlined link
             pattern = @" style=""color:rgba\(54,95,145,1\);font-weight:bold;text-decoration: underline;"" id="""" ><u class='blue bold'>";
             replacement = @"><u class='blue bold'>";
@@ -231,28 +288,13 @@ namespace App1
             // stray brown
             result = Regex.Replace(result, @" style=""color:rgba\(99,36,35,1\);"" ", "");
 
-            //Debug.WriteLine(html);
+            // title with nested cambria
+            pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" ><span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" >([^<>]+)</span>";
+            replacement = @"<span class='title'>$1";
+            result = Regex.Replace(result, pattern, replacement);
+
             result = result.Trim();
-        }
-
-        private async void button_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        {
-            //myWebview.NavigateToString(text);
-            //myWebview.NavigateToLocalStreamUri(myUrl, myResolver);
-        }
-
-        private void InitializeDict()
-        {
-            Dictionary.AddDictionary(@"OxfordFrenchEnglish.dict");
-
-            Operation op = Operation.crateLoadTOC(@"OxfordFrenchEnglish.dict");
-            op.errorHandler += HandleError;
-            op.post();
-            Dictionary foo = Dictionary.currentDictionary();
-            Debug.WriteLine(foo.phrase(123));
-            op = Operation.crateLoadPhraseDefinitionOperation(foo.id(), "maison");
-            op.operationCompletedHandler += OperationCompleted;
-            op.post();
+            return result;
         }
     }
 }

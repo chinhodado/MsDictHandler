@@ -7,8 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,0,0,90">
-        <WebView x:Name="myWebview" HorizontalAlignment="Left" Height="748" Margin="10,10,0,0" VerticalAlignment="Top" Width="1346"/>
-        <Button x:Name="button" Content="Button" HorizontalAlignment="Left" Height="55" Margin="632,706,0,-83" VerticalAlignment="Top" RenderTransformOrigin="0.355,-0.139" Width="97" Click="button_Click"/>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <TextBox x:Name="textBox" HorizontalAlignment="Left" Margin="484,266,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Height="108" Width="464"/>
     </Grid>
 </Page>
