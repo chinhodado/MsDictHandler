@@ -10,12 +10,19 @@ using Windows.UI.Xaml.Controls;
 
 namespace MsDictHandler {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Build a SQLite database from a MSDict .dict database
+    /// (only tested on the Oxford Hachette French Dictionary
+    /// Every time this app loads, it looks for the file test.db, checks the WordTable table,
+    /// and inserts in there the next 500 words, then exits itself.
     /// </summary>
     public sealed partial class MainPage : Page {
         private SQLiteConnection db;
         private Dictionary dict;
         string[] wordList = new string[40854];
+        StreamUriWinRTResolver myResolver = new StreamUriWinRTResolver();
+        Uri myUrl = new Uri("http://www.google.ca");
+        private string dictName = "OxfordFrenchEnglish.dict";
+        private uint phraseCount;
 
         public MainPage() {
             InitializeComponent();
@@ -25,10 +32,15 @@ namespace MsDictHandler {
         private void HandleError(Operation operation, int err) {
             Debug.WriteLine("An error happened");
         }
-        StreamUriWinRTResolver myResolver = new StreamUriWinRTResolver();
-        Uri myUrl = new Uri("http://www.google.ca");
+
         private async void OperationCompleted(Operation operation) {
             string html;
+            // there is a massive leak inside UriToStreamAsync(). Every time you call it,
+            // it creates a handle for the dictionary file, but never releases the handle.
+            // Since the maximum number of handle (per process?) possible is 512, after about
+            // 512 words have been read (may not be exact 512, since there can be stdio and such),
+            // the word definition will be repeating. Of course, I can't do anything about it.
+            // Thus, the app needs to be restarted every 500 words.
             using (IInputStream x = await myResolver.UriToStreamAsync(myUrl)) {
                 using (StreamReader stream = new StreamReader(x.AsStreamForRead())) {
                     html = stream.ReadToEnd().Trim();
@@ -44,46 +56,53 @@ namespace MsDictHandler {
                 Definition = cleanHtml
             });
             operation.Dispose();
-            html = null;
-            cleanHtml = null;
 
-            if (id % 500 == 499 || id >= 40854) {
+            if (id % 500 == 499 || id >= phraseCount) {
                 Application.Current.Exit();
             }
-            Operation op = Operation.crateLoadPhraseDefinitionOperation("OxfordFrenchEnglish.dict", (uint)id + 1);
+
+            // load the next word definition, in a recursive way. But of course it's not real recursion
+            // since this function/event handler can return immediately after posting the new operation
+            Operation op = Operation.crateLoadPhraseDefinitionOperation(dictName, (uint)id + 1);
             op.operationCompletedHandler += OperationCompleted;
             op.post();
         }
 
         private void PageLoaded(object sender, RoutedEventArgs e) {
+            // initialize dict
+            Dictionary.AddDictionary(dictName);
+            Operation op = Operation.crateLoadTOC(dictName);
+            op.errorHandler += HandleError;
+            op.post();
+
+            dict = Dictionary.currentDictionary();
+            phraseCount = dict.phraseCount();
+
             // initialize db
             string path = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "test.db");
             db = new SQLiteConnection(path, true);
             db.CreateTable<WordTable>();
             int count = db.ExecuteScalar<int>("select count(*) from WordTable");
-            //db.DropTable<WordTable>();
 
-            if (count == 40854) {
+            if (count == phraseCount) {
                 textBox.Text = "All done!";
                 return;
             }
 
-            // initialize dict
-            Dictionary.AddDictionary(@"OxfordFrenchEnglish.dict");
-            Operation op = Operation.crateLoadTOC(@"OxfordFrenchEnglish.dict");
-            op.errorHandler += HandleError;
-            op.post();
-
-            dict = Dictionary.currentDictionary();
             for (uint i = 0; i < 40854; i++) {
                 wordList[i] = dict.phrase(i);
             }
 
-            op = Operation.crateLoadPhraseDefinitionOperation("OxfordFrenchEnglish.dict", (uint)count);
+            op = Operation.crateLoadPhraseDefinitionOperation(dictName, (uint)count);
             op.operationCompletedHandler += OperationCompleted;
             op.post();
         }
 
+        /// <summary>
+        /// Get the cleaned up HTML from the initial verbose HTML.
+        /// </summary>
+        /// <param name="html">Source HTML</param>
+        /// <returns>The cleaned up HTML</returns>
         private string GetProcessedHtml(string html) {
             // useless attributes
             string result = Regex.Replace(html, @"-ms-text-size-adjust:none;", "");

@@ -37,9 +37,13 @@ namespace MsDictHandlerContinuer {
     }
 
     /**
-     * Monitor MsDictHandler.exe and start it up if it's not running.
+     * Monitor MsDictHandler.exe and start it up if it's not running. Required since MsDictHandler needs to be restarted every 500 words.
+     * Get the app's id at
+     * HKEY_CURRENT_USER\Software\Classes\ActivatableClasses\Package\28587606-2a78-4929-9f33-7a8c1e7102f7_1.0.0.0_x86__bhmrb0r2ehb8t\Server\App.AppXa0wwp936wckwwjxd2ax1q9mmay3zzknn.mca
+     * -> AppUserModelId
+     * (the key above may not be exact - just an example)
      */
-    class MsDictHandlerContinuer {
+    public static class MsDictHandlerContinuer {
         static void Main(string[] args) {
             int count = 0;
             while (true) {
