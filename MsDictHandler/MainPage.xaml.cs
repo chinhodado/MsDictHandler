@@ -285,12 +285,6 @@ namespace App1 {
             replacement = @"<span><span class='bl b'>";
             result = Regex.Replace(result, pattern, replacement);
 
-            // stray blue bold
-            result = Regex.Replace(result, @" style=""color:rgba\(54,95,145,1\);font-weight:bold;""", "");
-
-            // stray brown
-            result = Regex.Replace(result, @" style=""color:rgba\(99,36,35,1\);"" ", "");
-
             // title with nested cambria
             pattern = @"<span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" ><span style=""color:rgba\(54,95,145,1\);font-weight:bold;font-size:24px;"" >([^<>]+)</span>";
             replacement = @"<span class='title'>$1";
@@ -298,6 +292,27 @@ namespace App1 {
 
             // empty href
             result = Regex.Replace(result, @"href=""""", "");
+
+            // empty id
+            result = Regex.Replace(result, @"id=""""", "");
+
+            // stray blue
+            result = Regex.Replace(result, @"color:rgba\(54,95,145,1\);", "");
+
+            // stray brown
+            result = Regex.Replace(result, @"color:rgba\(99,36,35,1\);", "");
+
+            // stray bold
+            result = Regex.Replace(result, @"font-weight:bold;", "");
+
+            // stray underline
+            result = Regex.Replace(result, @"text-decoration: underline;", "");
+
+            // stray title font size
+            result = Regex.Replace(result, @"font-size:24px;", "");
+
+            // empty style
+            result = Regex.Replace(result, @"style=""""", "");
 
             result = result.Trim();
             return result;
