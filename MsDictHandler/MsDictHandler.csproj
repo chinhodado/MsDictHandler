@@ -7,8 +7,8 @@
     <ProjectGuid>{F78CE3E4-9964-4F05-99A4-CC1A03BBC3F1}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>App1</RootNamespace>
-    <AssemblyName>App1</AssemblyName>
+    <RootNamespace>MsDictHandler</RootNamespace>
+    <AssemblyName>MsDictHandler</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>

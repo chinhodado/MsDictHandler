@@ -1,4 +1,4 @@
-﻿namespace App1
+﻿namespace MsDictHandler
 {
     public class WordTable
     {

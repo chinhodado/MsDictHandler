@@ -8,7 +8,7 @@ using Windows.Storage.Streams;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
-namespace App1 {
+namespace MsDictHandler {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
