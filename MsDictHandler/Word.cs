@@ -1,6 +1,6 @@
 ﻿namespace MsDictHandler {
-    public class WordTable {
-        public string Word { get; set; }
-        public string Definition { get; set; }
+    public class Word {
+        public string name { get; set; }
+        public string definition { get; set; }
     }
 }

@@ -12,7 +12,7 @@ namespace MsDictHandler {
     /// <summary>
     /// Build a SQLite database from a MSDict .dict database
     /// (only tested on the Oxford Hachette French Dictionary
-    /// Every time this app loads, it looks for the file test.db, checks the WordTable table,
+    /// Every time this app loads, it looks for the file test.db, checks the Word table,
     /// and inserts in there the next 500 words, then exits itself.
     /// </summary>
     public sealed partial class MainPage : Page {
@@ -51,9 +51,9 @@ namespace MsDictHandler {
             var url = operation.url();
             int id = int.Parse(url.Substring(url.IndexOf(@"=", StringComparison.Ordinal) + 1));
 
-            db.Insert(new WordTable {
-                Word = wordList[id],
-                Definition = cleanHtml
+            db.Insert(new Word {
+                name = wordList[id],
+                definition = cleanHtml
             });
             operation.Dispose();
 
@@ -81,8 +81,12 @@ namespace MsDictHandler {
             // initialize db
             string path = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "test.db");
             db = new SQLiteConnection(path, true);
-            db.CreateTable<WordTable>();
-            int count = db.ExecuteScalar<int>("select count(*) from WordTable");
+            db.CreateTable<Word>();
+            int count = db.ExecuteScalar<int>("select count(*) from Word");
+
+            if (count == 0) {
+                db.Query<Word>("CREATE INDEX name_idx ON Word (name)");
+            }
 
             if (count == phraseCount) {
                 textBox.Text = "All done!";
